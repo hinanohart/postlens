@@ -47,3 +47,12 @@ references:
     identifiers:
       - type: other
         value: "arXiv:2504.18574"
+  - type: article
+    title: "SkillsBench: Benchmarking How Well Agent Skills Work Across Diverse Tasks"
+    authors:
+      - family-names: "various"
+        given-names: ""
+    year: 2026
+    identifiers:
+      - type: other
+        value: "arXiv:2602.12670v3"

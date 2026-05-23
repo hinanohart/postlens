@@ -57,3 +57,21 @@ def test_time_skill_with_real_backbone_runs() -> None:
     out = time_skill("csv_stat", bb, prompt_tokens=[1, 2], decode_tokens=3)
     assert out["status"] == "ok"
     assert out["decoded"] == 3
+
+
+def test_decoded_zero_yields_none_tok_per_s() -> None:
+    # Audit finding: decode_tokens=0 used to leak `tok_per_s=0.0`, violating
+    # the "None = not measured" contract.
+    bench = LatencyBench(DummyBackbone(vocab_size=8))
+    result = bench.run(skill="x", prompt_tokens=[1], decode_tokens=0)
+    assert result.decoded == 0
+    assert result.tok_per_s is None
+    assert result.status == "ok"
+
+
+def test_negative_decode_tokens_raises() -> None:
+    bench = LatencyBench(DummyBackbone())
+    import pytest
+
+    with pytest.raises(ValueError, match="decode_tokens must be >= 0"):
+        bench.run(skill="x", prompt_tokens=[1], decode_tokens=-1)

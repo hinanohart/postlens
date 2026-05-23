@@ -7,6 +7,7 @@ from postlens.backbone import (
     RWKV7_GOOSE_REVISION,
     BackboneState,
     DummyBackbone,
+    RWKVBackbone,
     make_backbone,
 )
 
@@ -17,10 +18,16 @@ def test_rwkv7_revision_is_40_hex_sha() -> None:
     int(RWKV7_GOOSE_REVISION, 16)  # raises ValueError if not hex
 
 
-def test_registered_arch_contains_rwkv_and_mamba() -> None:
+def test_registered_arch_contains_rwkv() -> None:
     assert "rwkv7-goose" in REGISTERED_ARCH
     assert REGISTERED_ARCH["rwkv7-goose"].startswith("RWKV/RWKV7-Goose")
-    assert "mamba-2.8b" in REGISTERED_ARCH
+
+
+def test_registered_arch_excludes_unshipped_v011_entries() -> None:
+    # Mamba-3 backbone is deferred to v0.1.1 — must not appear as a live entry
+    # in v0.1.0 to avoid misleading make_backbone callers.
+    assert "mamba-2.8b" not in REGISTERED_ARCH
+    assert "mamba3-2.7b" not in REGISTERED_ARCH
 
 
 def test_dummy_backbone_prefill_then_step_is_deterministic() -> None:
@@ -56,3 +63,33 @@ def test_dummy_step_wraps_vocab() -> None:
     state = bb.prefill([0])
     _, tok = bb.step(state, 9)
     assert tok == 0
+
+
+def test_rwkv_backbone_refuses_unpinned_revision() -> None:
+    # Audit finding: revision pin must be runtime-enforced, not just CI-grepped.
+    with pytest.raises(ValueError, match="refusing to load revision"):
+        RWKVBackbone.from_pretrained("rwkv7-goose", revision="deadbeef" * 5)
+
+
+def test_rwkv_backbone_accepts_pinned_revision_path_until_hf_call() -> None:
+    # Passing the pinned SHA must pass the gate; the call then fails at the
+    # transformers import / network gate (HF_HUB_OFFLINE=1), which proves the
+    # gate is opt-in for the exact SHA only.
+    with pytest.raises(Exception) as excinfo:
+        RWKVBackbone.from_pretrained("rwkv7-goose", revision=RWKV7_GOOSE_REVISION)
+    # Must NOT be the pin-violation ValueError
+    assert "refusing to load revision" not in str(excinfo.value)
+
+
+def test_rwkv_backbone_allow_unsafe_revision_skips_gate() -> None:
+    # Power-user escape hatch must skip the pin check but still fail at HF call.
+    with pytest.raises(Exception) as excinfo:
+        RWKVBackbone.from_pretrained(
+            "rwkv7-goose", revision="deadbeef" * 5, allow_unsafe_revision=True
+        )
+    assert "refusing to load revision" not in str(excinfo.value)
+
+
+def test_rwkv_backbone_rejects_non_rwkv_arch() -> None:
+    with pytest.raises(ValueError, match="only supports rwkv7-goose"):
+        RWKVBackbone.from_pretrained("mamba3-2.7b")

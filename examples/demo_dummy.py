@@ -28,9 +28,8 @@ def main() -> int:
     agent = PostAgent(backbone=DummyBackbone(vocab_size=128), skills=skills)
     for name in agent.list_skills():
         rec = agent.run(name, prompt_tokens=[1, 2, 3, 4, 5], max_new_tokens=4)
-        print(
-            f"  ran skill={name!r:<22} tokens={rec.output_tokens} elapsed={rec.elapsed_s * 1e6:.0f}us"
-        )
+        elapsed_us = f"{rec.elapsed_s * 1e6:.0f}us"
+        print(f"  ran skill={name!r:<22} tokens={rec.output_tokens} elapsed={elapsed_us}")
 
     print()
     print("LatencyBench summary:")

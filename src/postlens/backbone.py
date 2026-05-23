@@ -12,7 +12,6 @@ RWKV7_GOOSE_REVISION = "b742a96904c69424901f2b8cf729b67863168063"
 
 REGISTERED_ARCH: dict[str, str] = {
     "rwkv7-goose": "RWKV/RWKV7-Goose-World3-2.9B-HF",
-    "mamba-2.8b": "state-spaces/mamba-2.8b-hf",
 }
 
 
@@ -99,11 +98,20 @@ class RWKVBackbone(Backbone):
 
     @classmethod
     def from_pretrained(
-        cls, arch: str = "rwkv7-goose", revision: str | None = None
+        cls,
+        arch: str = "rwkv7-goose",
+        revision: str | None = None,
+        allow_unsafe_revision: bool = False,
     ) -> RWKVBackbone:
         if arch != "rwkv7-goose":
             raise ValueError(f"RWKVBackbone only supports rwkv7-goose, got {arch!r}")
         revision = revision or RWKV7_GOOSE_REVISION
+        if revision != RWKV7_GOOSE_REVISION and not allow_unsafe_revision:
+            raise ValueError(
+                f"refusing to load revision {revision!r}: pinned to "
+                f"{RWKV7_GOOSE_REVISION!r}. Pass allow_unsafe_revision=True to override "
+                f"(only do this if you have audited the new upstream code)."
+            )
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
         repo = REGISTERED_ARCH[arch]
@@ -114,12 +122,14 @@ class RWKVBackbone(Backbone):
         return cls(model=model, tokenizer=tok)
 
     def prefill(self, token_ids: list[int]) -> BackboneState:
+        if not token_ids:
+            raise ValueError("prefill requires at least one token id")
         import torch
 
         ids = torch.tensor([token_ids], dtype=torch.long)
         with torch.no_grad():
             out = self._model(input_ids=ids, use_cache=True)
-        state = getattr(out, "state", None) or getattr(out, "past_key_values", None)
+        state = _extract_state(out)
         size = _approx_state_bytes(state)
         return BackboneState(arch=self.arch, bytes_size=size, payload=state)
 
@@ -129,7 +139,7 @@ class RWKVBackbone(Backbone):
         ids = torch.tensor([[token_id]], dtype=torch.long)
         with torch.no_grad():
             out = self._model(input_ids=ids, state=state.payload, use_cache=True)
-        next_state = getattr(out, "state", None) or getattr(out, "past_key_values", None)
+        next_state = _extract_state(out)
         logits = out.logits[:, -1, :]
         next_tok = int(torch.argmax(logits, dim=-1).item())
         size = _approx_state_bytes(next_state)
@@ -140,6 +150,13 @@ class RWKVBackbone(Backbone):
 
     def state_bytes(self, state: BackboneState) -> int:
         return state.bytes_size
+
+
+def _extract_state(out: Any) -> Any:
+    state = getattr(out, "state", None)
+    if state is None:
+        state = getattr(out, "past_key_values", None)
+    return state
 
 
 def _approx_state_bytes(state: Any) -> int:

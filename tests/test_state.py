@@ -55,3 +55,26 @@ def test_len_after_evict() -> None:
     store.evict(h1)
     assert len(store) == 1
     assert store.has(h2)
+
+
+def test_distinct_saves_under_same_skill_yield_distinct_handles() -> None:
+    # Audit finding: same skill + same (arch, bytes_size) used to collide in
+    # the digest, silently overwriting the first save. Event-keyed digest fixes this.
+    store = RecurrentStateStore()
+    s1 = BackboneState(arch="dummy", bytes_size=8, payload="first")
+    s2 = BackboneState(arch="dummy", bytes_size=8, payload="second")
+    h1 = store.save("csv_stat", s1)
+    h2 = store.save("csv_stat", s2)
+    assert h1.digest != h2.digest
+    assert store.restore(h1).payload == "first"
+    assert store.restore(h2).payload == "second"
+    assert len(store) == 2
+
+
+def test_save_under_same_skill_many_times_never_collides() -> None:
+    store = RecurrentStateStore()
+    handles = [
+        store.save("x", BackboneState(arch="dummy", bytes_size=8, payload=i)) for i in range(50)
+    ]
+    digests = {h.digest for h in handles}
+    assert len(digests) == 50

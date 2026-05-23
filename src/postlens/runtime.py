@@ -53,6 +53,10 @@ class PostAgent:
         """Drive prefill+step for a single skill, caching the state."""
         if skill_id not in self.skills:
             raise KeyError(f"unknown skill: {skill_id!r}")
+        if not prompt_tokens:
+            raise ValueError("prompt_tokens must be non-empty")
+        if max_new_tokens < 0:
+            raise ValueError("max_new_tokens must be >= 0")
         import time
 
         t0 = time.perf_counter()
@@ -60,7 +64,7 @@ class PostAgent:
         handle = self.store.save(skill_id, state)
         out_tokens: list[int] = []
         cur_state: BackboneState = state
-        last_tok = prompt_tokens[-1] if prompt_tokens else 0
+        last_tok = prompt_tokens[-1]
         for _ in range(max_new_tokens):
             cur_state, last_tok = self.backbone.step(cur_state, last_tok)
             out_tokens.append(last_tok)

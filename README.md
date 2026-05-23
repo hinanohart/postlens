@@ -83,6 +83,14 @@ The pinned revision is enforced at the CI level (drift guard) so
 - **peak VRAM** — `torch.cuda.max_memory_allocated()` snapshot (None on CPU)
 - **state bytes** — recurrent state size, exposing SSM's constant-memory edge
 
+> **Honest scope of v0.1.0 numbers.** The bundled bench scaffolding runs
+> against `DummyBackbone` by default — its `ttft_s` / `tok_per_s` values
+> reflect the harness overhead, not real RWKV-7 inference speed. Real
+> RWKV-7 vs Transformer comparison numbers (with `Qwen3-Omni-7B` /
+> `Llama-3.3-8B` baselines on `SkillsBench`) land in v0.1.1; this v0.1.0
+> ships the **measurement framework** so the v0.1.1 numbers are reproducible
+> rather than ad-hoc.
+
 Transformer baselines we plan to compare against in the v0.1.0 paper draft:
 - `Qwen/Qwen3-Omni-7B-Instruct`
 - `meta-llama/Llama-3.3-8B-Instruct`

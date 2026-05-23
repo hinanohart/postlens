@@ -98,10 +98,30 @@ def _extract_section(text: str, header_re: re.Pattern[str], next_header_re: re.P
 
 
 def _iter_steps(block: str) -> Iterable[str]:
-    for line in block.splitlines():
-        line = line.strip()
-        if not line:
+    """Yield numbered steps, merging indented continuation lines into the
+    preceding step.
+
+    A line starting with `N.` opens a new step. Subsequent lines that begin
+    with whitespace (continuation) or `- ` (sub-bullet) are appended to the
+    current step. Blank lines flush the current step.
+    """
+    current: list[str] = []
+
+    def _flush() -> Iterable[str]:
+        if current:
+            yield " ".join(current).strip()
+            current.clear()
+
+    step_open_re = re.compile(r"^(\d+)\.\s+(.+)$")
+    for raw in block.splitlines():
+        if not raw.strip():
+            yield from _flush()
             continue
-        m = re.match(r"^(\d+)\.\s+(.+)$", line)
-        if m:
-            yield m.group(2).strip()
+        m = step_open_re.match(raw.lstrip())
+        if m and not raw.startswith((" ", "\t")):
+            yield from _flush()
+            current.append(m.group(2).strip())
+        elif current and (raw.startswith((" ", "\t")) or raw.lstrip().startswith("- ")):
+            current.append(raw.strip().lstrip("- ").strip())
+        # else: drop top-level non-numbered prose silently (matches v0.1.0 contract)
+    yield from _flush()
