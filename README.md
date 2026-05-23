@@ -100,6 +100,30 @@ download required) lives at `examples/demo_dummy.py`:
 PYTHONPATH=src python3 examples/demo_dummy.py
 ```
 
+After `pip install -e .` you can also drive it via the CLI:
+
+```bash
+postlens run examples/tasks/hello.md \
+  --backbone dummy \
+  --skills examples/skills/ \
+  --decode-tokens 16
+```
+
+The CLI emits a CSV (`skill,ttft_s,tok_per_s,state_bytes`) suitable for piping
+into pandas / a notebook.
+
+## v0.1.1 deferred (honest scope)
+
+These items are explicitly out of scope for v0.1.0 and tracked for v0.1.1:
+
+- Mamba-3 concrete backbone (HF repo not public as of 2026-05-23)
+- Cross-process state cache (safetensors-based; no pickle)
+- Real `torch.cuda.Stream` dispatch (v0.1.0 ships logical scheduler trace)
+- `SkillsBench` runner + Transformer baselines (Qwen3-Omni-7B, Llama-3.3-8B)
+- Live `smolagents.CodeAgent` composition in `PostAgent.run`
+- MCP tool wrapping in `Skill.as_tool`
+- PyPI publication
+
 ## License & attribution
 
 - **Apache-2.0**
