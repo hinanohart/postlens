@@ -52,3 +52,17 @@ def test_as_smolagents_tools_returns_one_per_skill() -> None:
     descs = a.as_smolagents_tools()
     assert len(descs) == 5
     assert all("klass" in d for d in descs)
+
+
+def test_run_empty_prompt_raises() -> None:
+    # Audit finding: empty prompt used to silently fall back to last_tok=0
+    # — fail-closed instead.
+    a = _agent()
+    with pytest.raises(ValueError, match="prompt_tokens must be non-empty"):
+        a.run("csv_stat", prompt_tokens=[], max_new_tokens=1)
+
+
+def test_run_negative_max_new_tokens_raises() -> None:
+    a = _agent()
+    with pytest.raises(ValueError, match="max_new_tokens must be >= 0"):
+        a.run("csv_stat", prompt_tokens=[1], max_new_tokens=-1)

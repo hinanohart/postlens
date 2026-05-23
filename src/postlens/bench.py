@@ -59,7 +59,10 @@ class LatencyBench:
         prompt_tokens: list[int] | None = None,
         decode_tokens: int = 32,
     ) -> BenchResult:
+        if decode_tokens < 0:
+            raise ValueError("decode_tokens must be >= 0")
         prompt_tokens = prompt_tokens or [0]
+        _reset_peak_vram()
         t0 = time.perf_counter()
         state = self.backbone.prefill(prompt_tokens)
         ttft = time.perf_counter() - t0
@@ -70,7 +73,7 @@ class LatencyBench:
             state, last_tok = self.backbone.step(state, last_tok)
             decoded += 1
         decode_elapsed = time.perf_counter() - decode_start
-        tok_per_s = decoded / decode_elapsed if decode_elapsed > 0 else None
+        tok_per_s = decoded / decode_elapsed if decoded > 0 and decode_elapsed > 0 else None
         peak_vram_mb = _peak_vram_mb()
         return BenchResult(
             skill=skill,
@@ -93,3 +96,14 @@ def _peak_vram_mb() -> float | None:
     if not torch.cuda.is_available():
         return None
     return torch.cuda.max_memory_allocated() / (1024 * 1024)
+
+
+def _reset_peak_vram() -> None:
+    """Reset CUDA peak-stats so `_peak_vram_mb()` reports per-run, not cumulative."""
+    try:
+        import torch
+    except Exception:
+        return
+    if not torch.cuda.is_available():
+        return
+    torch.cuda.reset_peak_memory_stats()

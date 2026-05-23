@@ -59,3 +59,43 @@ def test_load_skills_non_directory_raises(tmp_path: Path) -> None:
     f.write_text("nope")
     with pytest.raises(SkillParseError):
         load_skills(f)
+
+
+def test_steps_merge_continuation_lines() -> None:
+    # Audit finding: continuation lines (indented under a numbered step)
+    # used to be silently dropped — they must be folded into the prior step.
+    text = (
+        "# SKILL: cont_test\n\n"
+        "**class**: retrieval-light\n"
+        "**input**: foo\n"
+        "**output**: bar\n\n"
+        "## Steps\n"
+        "1. first step opens the file\n"
+        "   and continues on the next line\n"
+        "2. second step\n"
+        "   - sub-bullet under second\n"
+        "3. third step\n"
+    )
+    s = Skill.from_text(text)
+    assert len(s.steps) == 3
+    assert "continues on the next line" in s.steps[0]
+    assert "sub-bullet under second" in s.steps[1]
+    assert s.steps[2] == "third step"
+
+
+def test_blank_line_flushes_step_buffer() -> None:
+    text = (
+        "# SKILL: blank_test\n\n"
+        "**class**: retrieval-light\n"
+        "**input**: foo\n"
+        "**output**: bar\n\n"
+        "## Steps\n"
+        "1. first\n"
+        "\n"
+        "   stranded continuation\n"
+        "2. second\n"
+    )
+    s = Skill.from_text(text)
+    # blank line must flush; stranded continuation does not attach back
+    assert s.steps[0] == "first"
+    assert "stranded continuation" not in s.steps[0]
