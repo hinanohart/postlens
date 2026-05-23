@@ -1,0 +1,49 @@
+cff-version: 1.2.0
+message: "If you use postlens in academic work, please cite as below."
+title: "postlens: Post-Transformer agent latency framework"
+abstract: >
+  postlens runs smolagents CodeAgent with RWKV-7 / Mamba-3 backbones and
+  benchmarks skill-execution latency against Transformer baselines, with
+  an honest weakness map for retrieval-heavy skills (arxiv:2504.18574).
+authors:
+  - family-names: hinanohart
+    given-names: ""
+version: 0.1.0
+date-released: "2026-05-23"
+license: Apache-2.0
+repository-code: "https://github.com/hinanohart/postlens"
+keywords:
+  - rwkv
+  - mamba
+  - state-space-models
+  - agent
+  - latency
+  - smolagents
+references:
+  - type: article
+    title: 'RWKV-7 "Goose" with Expressive Dynamic State Evolution'
+    authors:
+      - family-names: "RWKV team"
+        given-names: ""
+    year: 2025
+    identifiers:
+      - type: other
+        value: "arXiv:2503.14456"
+  - type: article
+    title: "Mamba-3: Improved Sequence Modeling using State Space Principles"
+    authors:
+      - family-names: "Mamba team"
+        given-names: ""
+    year: 2026
+    identifiers:
+      - type: other
+        value: "arXiv:2603.15569"
+  - type: article
+    title: "Understanding the Skill Gap in Recurrent Language Models: The Role of the Gather-and-Aggregate Mechanism"
+    authors:
+      - family-names: "various"
+        given-names: ""
+    year: 2025
+    identifiers:
+      - type: other
+        value: "arXiv:2504.18574"
