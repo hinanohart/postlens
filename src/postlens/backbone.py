@@ -101,16 +101,19 @@ class RWKVBackbone(Backbone):
         cls,
         arch: str = "rwkv7-goose",
         revision: str | None = None,
-        allow_unsafe_revision: bool = False,
     ) -> RWKVBackbone:
         if arch != "rwkv7-goose":
             raise ValueError(f"RWKVBackbone only supports rwkv7-goose, got {arch!r}")
         revision = revision or RWKV7_GOOSE_REVISION
-        if revision != RWKV7_GOOSE_REVISION and not allow_unsafe_revision:
+        # trust_remote_code executes modeling_*.py from the HF repo, so the
+        # revision must be the audited, immutable commit SHA. A mutable ref
+        # (branch/tag) or any other commit could ship trojanized code (RCE);
+        # there is intentionally no escape hatch to override this.
+        if revision != RWKV7_GOOSE_REVISION:
             raise ValueError(
                 f"refusing to load revision {revision!r}: pinned to "
-                f"{RWKV7_GOOSE_REVISION!r}. Pass allow_unsafe_revision=True to override "
-                f"(only do this if you have audited the new upstream code)."
+                f"{RWKV7_GOOSE_REVISION!r}. trust_remote_code runs upstream code, so "
+                f"only the audited, immutable commit SHA may be loaded."
             )
         from transformers import AutoModelForCausalLM, AutoTokenizer
 

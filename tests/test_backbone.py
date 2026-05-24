@@ -81,13 +81,20 @@ def test_rwkv_backbone_accepts_pinned_revision_path_until_hf_call() -> None:
     assert "refusing to load revision" not in str(excinfo.value)
 
 
-def test_rwkv_backbone_allow_unsafe_revision_skips_gate() -> None:
-    # Power-user escape hatch must skip the pin check but still fail at HF call.
-    with pytest.raises(Exception) as excinfo:
-        RWKVBackbone.from_pretrained(
-            "rwkv7-goose", revision="deadbeef" * 5, allow_unsafe_revision=True
-        )
-    assert "refusing to load revision" not in str(excinfo.value)
+def test_rwkv_backbone_rejects_mutable_branch_revision() -> None:
+    # Audit finding (RCE): trust_remote_code must never load a mutable ref;
+    # only the pinned immutable SHA is accepted.
+    with pytest.raises(ValueError, match="refusing to load revision"):
+        RWKVBackbone.from_pretrained("rwkv7-goose", revision="main")
+
+
+def test_rwkv_backbone_has_no_unsafe_revision_escape_hatch() -> None:
+    # Audit finding (RCE): the allow_unsafe_revision override was removed so
+    # an arbitrary revision can never reach trust_remote_code at runtime.
+    import inspect
+
+    params = inspect.signature(RWKVBackbone.from_pretrained).parameters
+    assert "allow_unsafe_revision" not in params
 
 
 def test_rwkv_backbone_rejects_non_rwkv_arch() -> None:
