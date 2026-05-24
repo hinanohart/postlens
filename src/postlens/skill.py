@@ -8,6 +8,12 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
+# DoS guards: a `.SKILL.md` is a small markdown descriptor (the bundled ones
+# are < 1 KiB). Cap per-file size and per-directory file count so a hostile or
+# accidental huge file/dir cannot exhaust memory.
+MAX_SKILL_BYTES = 1 << 20  # 1 MiB
+MAX_SKILL_FILES = 256
+
 _HEADER_RE = re.compile(r"^# SKILL:\s*(\S+)\s*$", re.MULTILINE)
 _FIELD_RE = re.compile(r"^\*\*(\w+)\*\*:\s*(.+?)\s*$", re.MULTILINE)
 _STEPS_HEADER_RE = re.compile(r"^##\s+Steps\s*$", re.MULTILINE)
@@ -33,6 +39,11 @@ class Skill:
     @classmethod
     def load(cls, path: str | Path) -> Skill:
         p = Path(path)
+        size = p.stat().st_size
+        if size > MAX_SKILL_BYTES:
+            raise SkillParseError(
+                f"skill file {p} is {size} bytes, exceeds limit of {MAX_SKILL_BYTES}"
+            )
         text = p.read_text(encoding="utf-8")
         return cls._parse(text, source=p)
 
@@ -83,7 +94,12 @@ def load_skills(directory: str | Path) -> list[Skill]:
     d = Path(directory)
     if not d.is_dir():
         raise SkillParseError(f"not a directory: {d}")
-    return [Skill.load(p) for p in sorted(d.glob("*.SKILL.md"))]
+    paths = sorted(d.glob("*.SKILL.md"))
+    if len(paths) > MAX_SKILL_FILES:
+        raise SkillParseError(
+            f"{d} has {len(paths)} skill files, exceeds limit of {MAX_SKILL_FILES}"
+        )
+    return [Skill.load(p) for p in paths]
 
 
 def _extract_section(text: str, header_re: re.Pattern[str], next_header_re: re.Pattern[str]) -> str:

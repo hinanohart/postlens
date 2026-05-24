@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from postlens.skill import Skill, SkillParseError, load_skills
+from postlens.skill import MAX_SKILL_BYTES, Skill, SkillParseError, load_skills
 
 SKILLS_DIR = Path(__file__).resolve().parents[1] / "examples" / "skills"
 
@@ -99,3 +99,12 @@ def test_blank_line_flushes_step_buffer() -> None:
     # blank line must flush; stranded continuation does not attach back
     assert s.steps[0] == "first"
     assert "stranded continuation" not in s.steps[0]
+
+
+def test_load_rejects_oversize_skill_file(tmp_path: Path) -> None:
+    # Audit finding (DoS): an oversized skill file must be rejected before its
+    # contents are read into memory.
+    big = tmp_path / "huge.SKILL.md"
+    big.write_bytes(b"# SKILL: huge\n" + b"x" * (MAX_SKILL_BYTES + 1))
+    with pytest.raises(SkillParseError, match="exceeds limit"):
+        Skill.load(big)
