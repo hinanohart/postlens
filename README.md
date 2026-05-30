@@ -134,7 +134,7 @@ These items are explicitly out of scope for v0.1.0 and tracked for v0.1.1:
 
 ## License & attribution
 
-- **Apache-2.0**
+- **MIT**
 - Optional interop with [flash-linear-attention](https://github.com/fla-org/flash-linear-attention) (**MIT**), pulled via the `[fla]` extra
 - RWKV-7 Goose paper: arxiv:2503.14456
 - Mamba-3 paper: arxiv:2603.15569

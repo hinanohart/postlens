@@ -8,13 +8,13 @@ dynamic = ["version"]
 description = "Post-Transformer agent latency framework (RWKV-7 / Mamba-3 backbones for smolagents)."
 readme = "README.md"
 requires-python = ">=3.10"
-license = "Apache-2.0"
+license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "hinanohart" }]
 keywords = ["rwkv", "mamba", "agent", "latency", "smolagents", "ssm"]
 classifiers = [
   "Development Status :: 3 - Alpha",
-  "License :: OSI Approved :: Apache Software License",
+  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
