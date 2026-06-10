@@ -17,12 +17,12 @@ flowchart TD
     PostAgent --> Backbone[Backbone Interface]
     PostAgent --> SkillLoader[load_skills]
     PostAgent --> StateStore[RecurrentStateStore]
-    Backbone --> DummyBackbone[DummyBackbone\ntest stub]
-    Backbone --> RWKVBackbone[RWKVBackbone\nRWKV-7 Goose 2.9B]
+    Backbone --> DummyBackbone[DummyBackbone<br>test stub]
+    Backbone --> RWKVBackbone[RWKVBackbone<br>RWKV-7 Goose 2.9B]
     SkillLoader --> SkillFiles[SKILL.md files]
     PostAgent --> LatencyBench[LatencyBench]
-    LatencyBench --> BenchResult[BenchResult\nTTFT tok_per_s state_bytes VRAM]
-    StateStore --> StateHandle[StateHandle\nper-skill cache]
+    LatencyBench --> BenchResult[BenchResult<br>TTFT tok_per_s state_bytes VRAM]
+    StateStore --> StateHandle[StateHandle<br>per-skill cache]
 ```
 
 ## Why
