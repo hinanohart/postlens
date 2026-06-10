@@ -1,0 +1,47 @@
+direction: down
+explanation: |md
+  ### postlens
+  **Post-Transformer agent latency framework — drive smolagents-style workflows with RWKV-7 recurrent SSM backbones.**
+| {near: top-center}
+
+cli: "① postlens CLI" {shape: oval; style: {fill: "#6366f1"; font-color: "#ffffff"; stroke: "#4338ca"; bold: true; font-size: 18}}
+
+agent: "② PostAgent" {style: {fill: "#0ea5e9"; font-color: "#ffffff"; stroke: "#0369a1"; bold: true; font-size: 18}}
+
+backbone_zone: "Backbone Layer" {
+  style: {fill: "#f0fdf4"; stroke: "#10b981"; font-color: "#065f46"; bold: true; font-size: 16}
+  backbone: "③ Backbone Interface"
+  dummy: "DummyBackbone\ntest stub"
+  rwkv: "RWKVBackbone\nRWKV-7 Goose 2.9B"
+  *.style.fill: "#dcfce7"; *.style.font-color: "#065f46"
+}
+
+state: "③ RecurrentStateStore" {style: {fill: "#dcfce7"; font-color: "#065f46"; stroke: "#10b981"; bold: true}}
+handle: "StateHandle\nper-skill cache" {shape: cylinder; style: {fill: "#fdf2f8"; stroke: "#ec4899"; font-color: "#9d174e"; bold: true}}
+
+tooling: "Tooling" {
+  style: {fill: "#fffbeb"; stroke: "#f59e0b"; font-color: "#92400e"; bold: true; font-size: 16}
+  skills: "SkillLoader\nload_skills"
+  skill_files: "SKILL.md files"
+  bench: "LatencyBench"
+  bench_result: "BenchResult\nTTFT · tok/s · VRAM"
+  *.style.fill: "#fef3c7"; *.style.font-color: "#92400e"
+}
+
+cli -> agent: "② drive"
+cli -> tooling.skills: "② load"
+cli -> tooling.bench: "② bench"
+agent -> backbone_zone.backbone: "③ call"
+agent -> state: "③ store"
+backbone_zone.backbone -> backbone_zone.dummy: "stub"
+backbone_zone.backbone -> backbone_zone.rwkv: "recurrent"
+tooling.skills -> tooling.skill_files: "read"
+tooling.bench -> tooling.bench_result: "④ emit"
+state -> handle: "④ cache"
+
+legend: "Legend" {
+  near: bottom-center
+  style: {fill: "#f8fafc"; stroke: "#cbd5e1"; font-size: 13}
+  e: "● entry"; c: "● core agent"; p: "● backbone"; b: "● tooling"; d: "● output"
+  e.style.font-color: "#4338ca"; c.style.font-color: "#0369a1"; p.style.font-color: "#10b981"; b.style.font-color: "#f59e0b"; d.style.font-color: "#ec4899"
+}

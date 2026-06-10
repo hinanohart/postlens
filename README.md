@@ -11,19 +11,9 @@ benchmark skill-execution latency against Transformer baselines.
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    CLI[postlens CLI] --> PostAgent
-    CLI --> SkillLoader[load_skills]
-    CLI --> LatencyBench[LatencyBench]
-    PostAgent --> Backbone[Backbone Interface]
-    PostAgent --> StateStore[RecurrentStateStore]
-    Backbone --> DummyBackbone[DummyBackbone<br>test stub]
-    Backbone --> RWKVBackbone[RWKVBackbone<br>RWKV-7 Goose 2.9B]
-    SkillLoader --> SkillFiles[SKILL.md files]
-    LatencyBench --> BenchResult[BenchResult<br>TTFT tok_per_s state_bytes VRAM]
-    StateStore --> StateHandle[StateHandle<br>per-skill cache]
-```
+<div align="center">
+  <img src="docs/architecture.png" alt="postlens architecture" width="840">
+</div>
 
 ## Why
 
@@ -176,3 +166,4 @@ These items are explicitly out of scope for v0.1.0 and tracked for v0.1.1:
 - RWKV community for the Goose 2.9B checkpoints
 - HuggingFace `smolagents` team for the CodeAgent design
 - `flash-linear-attention` maintainers for the kernel library
+
