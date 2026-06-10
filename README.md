@@ -1,13 +1,29 @@
 # postlens
 
-Post-Transformer agent latency framework. Drive `smolagents.CodeAgent`-style
-workflows with **RWKV-7 Goose** (or future Mamba-3) recurrent backbones and
+**Post-Transformer agent latency framework.** Drive `smolagents.CodeAgent`-style
+workflows with **RWKV-7 Goose** (or future Mamba-3) recurrent SSM backbones and
 benchmark skill-execution latency against Transformer baselines.
 
 > **Status: v0.1.0 (alpha).** Experimental. No SLA. Not for production.
 > v0.1.0 ships the framework, skill loader, scheduler, and the in-process
 > latency bench. Cross-process state persistence and PyPI distribution land
 > in v0.1.1.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    CLI[postlens CLI] --> PostAgent
+    PostAgent --> Backbone[Backbone Interface]
+    PostAgent --> SkillLoader[load_skills]
+    PostAgent --> StateStore[RecurrentStateStore]
+    Backbone --> DummyBackbone[DummyBackbone\ntest stub]
+    Backbone --> RWKVBackbone[RWKVBackbone\nRWKV-7 Goose 2.9B]
+    SkillLoader --> SkillFiles[SKILL.md files]
+    PostAgent --> LatencyBench[LatencyBench]
+    LatencyBench --> BenchResult[BenchResult\nTTFT tok_per_s state_bytes VRAM]
+    StateStore --> StateHandle[StateHandle\nper-skill cache]
+```
 
 ## Why
 
@@ -63,8 +79,8 @@ record = agent.run("csv_stat", prompt_tokens=[1, 2, 3, 4], max_new_tokens=8)
 print(record.output_tokens, record.elapsed_s)
 ```
 
-`DummyBackbone` is the test-friendly stand-in. To drive a real RWKV-7 Goose
-2.9B model:
+`DummyBackbone` is the test-friendly stand-in (no HF download, fully
+deterministic). To drive a real RWKV-7 Goose 2.9B model:
 
 ```python
 from postlens.backbone import RWKVBackbone
@@ -73,6 +89,20 @@ bb = RWKVBackbone.from_pretrained("rwkv7-goose")  # pinned to SHA b742a96
 
 The pinned revision is enforced at the CI level (drift guard) so
 `trust_remote_code=True` does not silently execute new upstream code.
+
+## How it works
+
+| Component | Module | Role |
+|---|---|---|
+| `PostAgent` | `postlens.runtime` | Composes backbone + skill set + state store; runs prefill→step loop |
+| `Backbone` | `postlens.backbone` | Abstract interface for RWKV-7 / Mamba-3; `DummyBackbone` for tests |
+| `RecurrentStateStore` | `postlens.state` | Caches per-skill recurrent hidden states as `StateHandle` |
+| `load_skills` | `postlens.skill` | Loads `*.SKILL.md` descriptors from a directory |
+| `LatencyBench` | `postlens.bench` | Measures TTFT, tok/s, peak VRAM, state bytes per skill run |
+| `postlens` CLI | `postlens.cli` | CLI entry point; emits CSV suitable for pandas / notebooks |
+
+`PostAgent.run` executes: prefill prompt tokens → save state → decode loop → return `RunRecord`.
+`LatencyBench.run` wraps that flow with `time.perf_counter` and `torch.cuda.max_memory_allocated`.
 
 ## Benchmark methodology
 
@@ -91,7 +121,7 @@ The pinned revision is enforced at the CI level (drift guard) so
 > ships the **measurement framework** so the v0.1.1 numbers are reproducible
 > rather than ad-hoc.
 
-Transformer baselines we plan to compare against in the v0.1.0 paper draft:
+Transformer baselines planned for v0.1.1:
 - `Qwen/Qwen3-Omni-7B-Instruct`
 - `meta-llama/Llama-3.3-8B-Instruct`
 
