@@ -14,13 +14,13 @@ benchmark skill-execution latency against Transformer baselines.
 ```mermaid
 flowchart TD
     CLI[postlens CLI] --> PostAgent
+    CLI --> SkillLoader[load_skills]
+    CLI --> LatencyBench[LatencyBench]
     PostAgent --> Backbone[Backbone Interface]
-    PostAgent --> SkillLoader[load_skills]
     PostAgent --> StateStore[RecurrentStateStore]
     Backbone --> DummyBackbone[DummyBackbone<br>test stub]
     Backbone --> RWKVBackbone[RWKVBackbone<br>RWKV-7 Goose 2.9B]
     SkillLoader --> SkillFiles[SKILL.md files]
-    PostAgent --> LatencyBench[LatencyBench]
     LatencyBench --> BenchResult[BenchResult<br>TTFT tok_per_s state_bytes VRAM]
     StateStore --> StateHandle[StateHandle<br>per-skill cache]
 ```
